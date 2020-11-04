@@ -1,0 +1,12 @@
+{
+  "nodePath": "/home/administrator/demoPOA2/iot-node/",
+  "addr": "0x47a267d59baDb1577CEe26c7A42E4E19aFC85cBA",
+  "password": "1",
+  "gatewayID": "SmartSantander",
+  "balanceContractAddr": "0xd0D17fA417a155Ad14818a5Ce0AB2841FEa0eC8A",
+  "accessContractAddr": "0x1C9c39465a016D0bE5204879e5C6bd0323AC31FC",
+  "dataContractAddr": "0xaE05A004892Efc62F84AB95cB5Fc649d4F0CC096",
+  "HTTPport": "5053",
+  "HTTPSport": "8053",
+  "dbBroker" : "10.10.46.21:5051"
+}
