@@ -22,7 +22,7 @@ contract dataLedgerContract
     event deleteInfo(bytes32 indexed _hash);
     address admin = 0x647F089F75db1874e574419d20C34b078797c4c5;
     
-    mapping(bytes32  => dataStruct) ledger;
+    mapping(bytes32  => dataStruct) public ledger;
     
     
     // Stores information in the blockchain
@@ -42,11 +42,7 @@ contract dataLedgerContract
     }
     
     
-    // Retrieves information from the blockchain
-    function retrieveInfo(bytes32 hash) view public returns (string memory, string memory)
-    {
-        return (ledger[hash].uri, ledger[hash].description);
-    }
+
     
     // Deletes a measurement from the blockchain
     function deleteMeasurement(bytes32 hash) public 

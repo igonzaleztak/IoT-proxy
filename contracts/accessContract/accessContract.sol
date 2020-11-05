@@ -19,13 +19,16 @@ contract accessControlContract
     mapping(address => string) public PubKeysKeystore;
     string public adminPublicKey;
     
+    mapping(address => string) public ProducersNameMap;
+    
     
     // Add a producer account to the list of producers
-    function addAccountToRegister(address producerAddr) public
+    function addAccountToRegister(address producerAddr, string memory producerName) public
     {
         require(msg.sender == admin);
         require(allowedAccounts[producerAddr] == false);
         allowedAccounts[producerAddr] = true;
+        ProducersNameMap[producerAddr] = producerName;
         
         // Check whether there are empty slots in the arrayAccounts. If there are empty slots, use them
         // to store the new producer. If not, push the producer to the end of the array arrayAccounts.

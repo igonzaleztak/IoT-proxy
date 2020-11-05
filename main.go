@@ -62,7 +62,6 @@ func initialize() localClient {
 	// Connect to the IPC endpoint of the Ethereum node
 	client, err := ethclient.Dial(config["nodePath"].(string) + "geth.ipc")
 	if err != nil {
-		libs.Log.Fatal(err)
 		fmt.Println(err)
 		panic(err)
 	}
@@ -72,7 +71,6 @@ func initialize() localClient {
 		config["password"].(string),
 		config["nodePath"].(string)+"keystore/")
 	if err != nil {
-		libs.Log.Fatal(err)
 		fmt.Println(err)
 		panic(err)
 	}
@@ -80,7 +78,6 @@ func initialize() localClient {
 	// Initialize the data contract
 	dataContract, err := dataContract.NewDataLedgerContract(common.HexToAddress(config["dataContractAddr"].(string)), client)
 	if err != nil {
-		libs.Log.Fatal(err)
 		fmt.Println(err)
 		panic(err)
 	}
@@ -88,7 +85,6 @@ func initialize() localClient {
 	// Initialize the accessControlContract
 	accessContract, err := accessControlContract.NewAccessControlContract(common.HexToAddress(config["accessContractAddr"].(string)), client)
 	if err != nil {
-		libs.Log.Fatal(err)
 		fmt.Println(err)
 		panic(err)
 	}
@@ -111,7 +107,6 @@ func initialize() localClient {
 	// Initialize the balanceContract
 	balanceContract, err := balanceContract.NewBalanceContract(common.HexToAddress(config["balanceContractAddr"].(string)), client)
 	if err != nil {
-		libs.Log.Fatal(err)
 		fmt.Println(err)
 		panic(err)
 	}
@@ -158,7 +153,7 @@ func (localClient localClient) EventListener(w http.ResponseWriter, req *http.Re
 			return
 		}
 
-		fmt.Printf("Measurement received: \n")
+		fmt.Printf("+ Measurement received: \n")
 		fmt.Println(bodyMap)
 
 		// Convert the localClient to libs.ComponentConfig
@@ -181,8 +176,8 @@ func (localClient localClient) EventListener(w http.ResponseWriter, req *http.Re
 			return
 		}
 
-		fmt.Printf("\nThe producer has access to the Blockchain\n")
-		fmt.Printf("Processing Measurement\n")
+		fmt.Printf("\n+ The producer has access to the Blockchain\n\n")
+		fmt.Printf("+ Processing Measurement\n")
 		err = libs.ProcessMeasurement(ethClient, bodyMap)
 		if err != nil {
 			fmt.Println(err)

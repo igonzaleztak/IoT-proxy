@@ -27,12 +27,13 @@ var (
 )
 
 // AccessControlContractABI is the input ABI used to generate the binding from.
-const AccessControlContractABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"newAddrRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"newAddrRemove\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"PubKeysKeystore\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"producerAddr\",\"type\":\"address\"}],\"name\":\"addAccountToRegister\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"string\",\"name\":\"pubKey\",\"type\":\"string\"}],\"name\":\"addPubKey\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"adminPublicKey\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"allowedAccounts\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"producerAddr\",\"type\":\"address\"}],\"name\":\"removeAccountFromRegister\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"returnAllowedAddresses\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const AccessControlContractABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"newAddrRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"newAddrRemove\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ProducersNameMap\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"PubKeysKeystore\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"producerAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"producerName\",\"type\":\"string\"}],\"name\":\"addAccountToRegister\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"string\",\"name\":\"pubKey\",\"type\":\"string\"}],\"name\":\"addPubKey\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"adminPublicKey\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"allowedAccounts\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"producerAddr\",\"type\":\"address\"}],\"name\":\"removeAccountFromRegister\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"returnAllowedAddresses\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // AccessControlContractFuncSigs maps the 4-byte function signature to its string representation.
 var AccessControlContractFuncSigs = map[string]string{
+	"47fbf82b": "ProducersNameMap(address)",
 	"489616fd": "PubKeysKeystore(address)",
-	"c1a9e99a": "addAccountToRegister(address)",
+	"9e20feb5": "addAccountToRegister(address,string)",
 	"670d65ea": "addPubKey(string)",
 	"f851a440": "admin()",
 	"be943a59": "adminPublicKey()",
@@ -42,7 +43,7 @@ var AccessControlContractFuncSigs = map[string]string{
 }
 
 // AccessControlContractBin is the compiled bytecode used for deploying new contracts.
-var AccessControlContractBin = "0x6080604052600080546001600160a01b03191673647f089f75db1874e574419d20c34b078797c4c517905534801561003657600080fd5b506107fe806100466000396000f3fe608060405234801561001057600080fd5b50600436106100885760003560e01c8063be943a591161005b578063be943a591461024e578063c1a9e99a14610256578063e04610ed1461027c578063f851a440146102b657610088565b8063089a6e911461008d578063489616fd146100b5578063664ae38414610150578063670d65ea146101a8575b600080fd5b6100b3600480360360208110156100a357600080fd5b50356001600160a01b03166102da565b005b6100db600480360360208110156100cb57600080fd5b50356001600160a01b03166103d4565b6040805160208082528351818301528351919283929083019185019080838360005b838110156101155781810151838201526020016100fd565b50505050905090810190601f1680156101425780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61015861046f565b60408051602080825283518183015283519192839290830191858101910280838360005b8381101561019457818101518382015260200161017c565b505050509050019250505060405180910390f35b6100b3600480360360208110156101be57600080fd5b8101906020810181356401000000008111156101d957600080fd5b8201836020820111156101eb57600080fd5b8035906020019184600183028401116401000000008311171561020d57600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295506104d2945050505050565b6100db610523565b6100b36004803603602081101561026c57600080fd5b50356001600160a01b031661057e565b6102a26004803603602081101561029257600080fd5b50356001600160a01b031661070d565b604080519115158252519081900360200190f35b6102be610722565b604080516001600160a01b039092168252519081900360200190f35b6000546001600160a01b031633146102f157600080fd5b6001600160a01b03811660009081526001602081905260409091205460ff1615151461031c57600080fd5b6001600160a01b0381166000908152600160209081526040808320805460ff191690556003909152902054600280548290811061035557fe5b6000918252602082200180546001600160a01b0319169055600480546001810182559082527f8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19b018290556040516001600160a01b038416917fc80a30448ebca053eacc14b559ce6e66b3e353e7ba16587686d9c2ea98af7abe91a25050565b60056020908152600091825260409182902080548351601f6002600019610100600186161502019093169290920491820184900484028101840190945280845290918301828280156104675780601f1061043c57610100808354040283529160200191610467565b820191906000526020600020905b81548152906001019060200180831161044a57829003601f168201915b505050505081565b606060028054806020026020016040519081016040528092919081815260200182805480156104c757602002820191906000526020600020905b81546001600160a01b031681526001909101906020018083116104a9575b505050505090505b90565b6000546001600160a01b03163314156104fe5780516104f8906006906020840190610731565b50610520565b336000908152600560209081526040909120825161051e92840190610731565b505b50565b6006805460408051602060026001851615610100026000190190941693909304601f810184900484028201840190925281815292918301828280156104675780601f1061043c57610100808354040283529160200191610467565b6000546001600160a01b0316331461059557600080fd5b6001600160a01b03811660009081526001602052604090205460ff16156105bb57600080fd5b6001600160a01b0381166000908152600160208190526040909120805460ff191690911790556004548015610673576000600460018303815481106105fc57fe5b90600052602060002001549050826002828154811061061757fe5b600091825260208083209190910180546001600160a01b0319166001600160a01b03948516179055918516815260039091526040902081905560048054600019840190811061066257fe5b6000918252602082200155506106d5565b600280546001810182557f405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ace0180546001600160a01b0319166001600160a01b038516908117909155905460009182526003602052604090912060001990910190555b6040516001600160a01b038316907fa7cab406c53b3f8f59aa392a2950c6e96c73a82560b7d0da98a17a0929cbfe8490600090a25050565b60016020526000908152604090205460ff1681565b6000546001600160a01b031681565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061077257805160ff191683800117855561079f565b8280016001018555821561079f579182015b8281111561079f578251825591602001919060010190610784565b506107ab9291506107af565b5090565b6104cf91905b808211156107ab57600081556001016107b556fea265627a7a72315820477b38ffeedd8aa996a245fdee158ecd5b5ed6e32e34d66e890950e6b93592fd64736f6c63430005100032"
+var AccessControlContractBin = "0x6080604052600080546001600160a01b03191673647f089f75db1874e574419d20c34b078797c4c517905534801561003657600080fd5b5061093e806100466000396000f3fe608060405234801561001057600080fd5b50600436106100935760003560e01c8063670d65ea11610066578063670d65ea146101d95780639e20feb51461027f578063be943a5914610335578063e04610ed1461033d578063f851a4401461037757610093565b8063089a6e911461009857806347fbf82b146100c0578063489616fd1461015b578063664ae38414610181575b600080fd5b6100be600480360360208110156100ae57600080fd5b50356001600160a01b031661039b565b005b6100e6600480360360208110156100d657600080fd5b50356001600160a01b0316610495565b6040805160208082528351818301528351919283929083019185019080838360005b83811015610120578181015183820152602001610108565b50505050905090810190601f16801561014d5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6100e66004803603602081101561017157600080fd5b50356001600160a01b0316610530565b610189610598565b60408051602080825283518183015283519192839290830191858101910280838360005b838110156101c55781810151838201526020016101ad565b505050509050019250505060405180910390f35b6100be600480360360208110156101ef57600080fd5b81019060208101813564010000000081111561020a57600080fd5b82018360208201111561021c57600080fd5b8035906020019184600183028401116401000000008311171561023e57600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295506105fb945050505050565b6100be6004803603604081101561029557600080fd5b6001600160a01b0382351691908101906040810160208201356401000000008111156102c057600080fd5b8201836020820111156102d257600080fd5b803590602001918460018302840111640100000000831117156102f457600080fd5b91908080601f01602080910402602001604051908101604052809392919081815260200183838082843760009201919091525092955061064c945050505050565b6100e66107f2565b6103636004803603602081101561035357600080fd5b50356001600160a01b031661084d565b604080519115158252519081900360200190f35b61037f610862565b604080516001600160a01b039092168252519081900360200190f35b6000546001600160a01b031633146103b257600080fd5b6001600160a01b03811660009081526001602081905260409091205460ff161515146103dd57600080fd5b6001600160a01b0381166000908152600160209081526040808320805460ff191690556003909152902054600280548290811061041657fe5b6000918252602082200180546001600160a01b0319169055600480546001810182559082527f8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19b018290556040516001600160a01b038416917fc80a30448ebca053eacc14b559ce6e66b3e353e7ba16587686d9c2ea98af7abe91a25050565b60076020908152600091825260409182902080548351601f6002600019610100600186161502019093169290920491820184900484028101840190945280845290918301828280156105285780601f106104fd57610100808354040283529160200191610528565b820191906000526020600020905b81548152906001019060200180831161050b57829003601f168201915b505050505081565b60056020908152600091825260409182902080548351601f6002600019610100600186161502019093169290920491820184900484028101840190945280845290918301828280156105285780601f106104fd57610100808354040283529160200191610528565b606060028054806020026020016040519081016040528092919081815260200182805480156105f057602002820191906000526020600020905b81546001600160a01b031681526001909101906020018083116105d2575b505050505090505b90565b6000546001600160a01b0316331415610627578051610621906006906020840190610871565b50610649565b336000908152600560209081526040909120825161064792840190610871565b505b50565b6000546001600160a01b0316331461066357600080fd5b6001600160a01b03821660009081526001602052604090205460ff161561068957600080fd5b6001600160a01b0382166000908152600160208181526040808420805460ff191690931790925560078152912082516106c492840190610871565b506004548015610757576000600460018303815481106106e057fe5b9060005260206000200154905083600282815481106106fb57fe5b600091825260208083209190910180546001600160a01b0319166001600160a01b03948516179055918616815260039091526040902081905560048054600019840190811061074657fe5b6000918252602082200155506107b9565b600280546001810182557f405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ace0180546001600160a01b0319166001600160a01b038616908117909155905460009182526003602052604090912060001990910190555b6040516001600160a01b038416907fa7cab406c53b3f8f59aa392a2950c6e96c73a82560b7d0da98a17a0929cbfe8490600090a2505050565b6006805460408051602060026001851615610100026000190190941693909304601f810184900484028201840190925281815292918301828280156105285780601f106104fd57610100808354040283529160200191610528565b60016020526000908152604090205460ff1681565b6000546001600160a01b031681565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106108b257805160ff19168380011785556108df565b828001600101855582156108df579182015b828111156108df5782518255916020019190600101906108c4565b506108eb9291506108ef565b5090565b6105f891905b808211156108eb57600081556001016108f556fea265627a7a72315820a79e717e512ee21f7ecc4fbdb330f57c9071191cb5311f60dce3714fef5cb17c64736f6c63430005100032"
 
 // DeployAccessControlContract deploys a new Ethereum contract, binding an instance of AccessControlContract to it.
 func DeployAccessControlContract(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *AccessControlContract, error) {
@@ -200,6 +201,37 @@ func (_AccessControlContract *AccessControlContractTransactorRaw) Transact(opts 
 	return _AccessControlContract.Contract.contract.Transact(opts, method, params...)
 }
 
+// ProducersNameMap is a free data retrieval call binding the contract method 0x47fbf82b.
+//
+// Solidity: function ProducersNameMap(address ) view returns(string)
+func (_AccessControlContract *AccessControlContractCaller) ProducersNameMap(opts *bind.CallOpts, arg0 common.Address) (string, error) {
+	var out []interface{}
+	err := _AccessControlContract.contract.Call(opts, &out, "ProducersNameMap", arg0)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// ProducersNameMap is a free data retrieval call binding the contract method 0x47fbf82b.
+//
+// Solidity: function ProducersNameMap(address ) view returns(string)
+func (_AccessControlContract *AccessControlContractSession) ProducersNameMap(arg0 common.Address) (string, error) {
+	return _AccessControlContract.Contract.ProducersNameMap(&_AccessControlContract.CallOpts, arg0)
+}
+
+// ProducersNameMap is a free data retrieval call binding the contract method 0x47fbf82b.
+//
+// Solidity: function ProducersNameMap(address ) view returns(string)
+func (_AccessControlContract *AccessControlContractCallerSession) ProducersNameMap(arg0 common.Address) (string, error) {
+	return _AccessControlContract.Contract.ProducersNameMap(&_AccessControlContract.CallOpts, arg0)
+}
+
 // PubKeysKeystore is a free data retrieval call binding the contract method 0x489616fd.
 //
 // Solidity: function PubKeysKeystore(address ) view returns(string)
@@ -355,25 +387,25 @@ func (_AccessControlContract *AccessControlContractCallerSession) ReturnAllowedA
 	return _AccessControlContract.Contract.ReturnAllowedAddresses(&_AccessControlContract.CallOpts)
 }
 
-// AddAccountToRegister is a paid mutator transaction binding the contract method 0xc1a9e99a.
+// AddAccountToRegister is a paid mutator transaction binding the contract method 0x9e20feb5.
 //
-// Solidity: function addAccountToRegister(address producerAddr) returns()
-func (_AccessControlContract *AccessControlContractTransactor) AddAccountToRegister(opts *bind.TransactOpts, producerAddr common.Address) (*types.Transaction, error) {
-	return _AccessControlContract.contract.Transact(opts, "addAccountToRegister", producerAddr)
+// Solidity: function addAccountToRegister(address producerAddr, string producerName) returns()
+func (_AccessControlContract *AccessControlContractTransactor) AddAccountToRegister(opts *bind.TransactOpts, producerAddr common.Address, producerName string) (*types.Transaction, error) {
+	return _AccessControlContract.contract.Transact(opts, "addAccountToRegister", producerAddr, producerName)
 }
 
-// AddAccountToRegister is a paid mutator transaction binding the contract method 0xc1a9e99a.
+// AddAccountToRegister is a paid mutator transaction binding the contract method 0x9e20feb5.
 //
-// Solidity: function addAccountToRegister(address producerAddr) returns()
-func (_AccessControlContract *AccessControlContractSession) AddAccountToRegister(producerAddr common.Address) (*types.Transaction, error) {
-	return _AccessControlContract.Contract.AddAccountToRegister(&_AccessControlContract.TransactOpts, producerAddr)
+// Solidity: function addAccountToRegister(address producerAddr, string producerName) returns()
+func (_AccessControlContract *AccessControlContractSession) AddAccountToRegister(producerAddr common.Address, producerName string) (*types.Transaction, error) {
+	return _AccessControlContract.Contract.AddAccountToRegister(&_AccessControlContract.TransactOpts, producerAddr, producerName)
 }
 
-// AddAccountToRegister is a paid mutator transaction binding the contract method 0xc1a9e99a.
+// AddAccountToRegister is a paid mutator transaction binding the contract method 0x9e20feb5.
 //
-// Solidity: function addAccountToRegister(address producerAddr) returns()
-func (_AccessControlContract *AccessControlContractTransactorSession) AddAccountToRegister(producerAddr common.Address) (*types.Transaction, error) {
-	return _AccessControlContract.Contract.AddAccountToRegister(&_AccessControlContract.TransactOpts, producerAddr)
+// Solidity: function addAccountToRegister(address producerAddr, string producerName) returns()
+func (_AccessControlContract *AccessControlContractTransactorSession) AddAccountToRegister(producerAddr common.Address, producerName string) (*types.Transaction, error) {
+	return _AccessControlContract.Contract.AddAccountToRegister(&_AccessControlContract.TransactOpts, producerAddr, producerName)
 }
 
 // AddPubKey is a paid mutator transaction binding the contract method 0x670d65ea.

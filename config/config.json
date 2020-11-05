@@ -4,9 +4,9 @@
   "password": "1",
   "gatewayID": "SmartSantander",
   "balanceContractAddr": "0xd0D17fA417a155Ad14818a5Ce0AB2841FEa0eC8A",
-  "accessContractAddr": "0x1C9c39465a016D0bE5204879e5C6bd0323AC31FC",
-  "dataContractAddr": "0xaE05A004892Efc62F84AB95cB5Fc649d4F0CC096",
+  "accessContractAddr": "0x0F47d696A98ABE52CfBC399f989A687dcF4791A2",
+  "dataContractAddr": "0xf539f777f7389a4f8489E27F68cf3A55b2b2568A",
   "HTTPport": "5053",
   "HTTPSport": "8053",
-  "dbBroker" : "10.10.46.21:5051"
+  "dbBroker" : "http://10.10.46.21:5051"
 }
