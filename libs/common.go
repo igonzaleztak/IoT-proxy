@@ -30,8 +30,6 @@ type DataBlockchain struct {
 	Hash         [32]byte
 	Description  string
 	EncryptedURL string
-	EncryptedKey string
-	AddressIoT   common.Address
 }
 
 // HexStringToBytes32 converts hex string to [32]byte

@@ -21,6 +21,9 @@ contract ERC20Basic {
 
 
     address admin = 0x647F089F75db1874e574419d20C34b078797c4c5;
+    
+    // Dummy account that holds the retained money
+    address public dummyAccount = 0x350E39B04c18Ff1D674060d1D57D9F04A424827B;
 
     function setTotalSupply(uint256 total) public {
         require(msg.sender == admin, "You do not have enough privileges to do this action");
@@ -59,7 +62,6 @@ contract ERC20Basic {
         require(numTokens <= allowed[owner][msg.sender]);
     
         balances[owner] = balances[owner].sub(numTokens);
-        allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);
         balances[buyer] = balances[buyer].add(numTokens);
         emit Transfer(owner, buyer, numTokens);
         return true;
