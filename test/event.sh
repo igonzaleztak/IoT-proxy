@@ -18,7 +18,7 @@ curl 10.10.46.20:5053/notify -s -S --header 'Content-Type: application/json' --h
   },
   "intensity":{
       "type":"Number",
-      "value":300,
+      "value":310,
       "metadata":{
         
       }

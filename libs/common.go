@@ -1,8 +1,10 @@
 package libs
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -52,4 +54,11 @@ func ByteToByte32(bytes []byte) [32]byte {
 	var b [32]byte
 	copy(b[:], bytes)
 	return b
+}
+
+// StreamToByte converts io.Reader stream to string or byte slice
+func StreamToByte(stream io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.Bytes()
 }

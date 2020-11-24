@@ -34,6 +34,11 @@ func sendMeasurementToDB(msg []byte, urlDB string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		str := fmt.Sprintf("%s\n", StreamToByte(resp.Body))
+		return "", errors.New(str)
+	}
+
 	// Get the url from the body
 	respBody := make(map[string]interface{})
 	err = json.NewDecoder(resp.Body).Decode(&respBody)
@@ -48,6 +53,39 @@ func sendMeasurementToDB(msg []byte, urlDB string) (string, error) {
 
 // Inserts the required information to retrieve a measurement in the Blockchain
 func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain) error {
+
+	// Check that the measurement has not already been stored
+	measurement, err := ethClient.DataCon.Ledger(nil, dataStruct.Hash)
+	if err != nil {
+		return err
+	}
+
+	// Check that the price of the measurement has already been set
+	priceTag, err := ethClient.BalanceCon.GetPriceMeasurement(nil, dataStruct.Hash)
+	if err != nil {
+		return err
+	}
+
+	if measurement.Uri != "" {
+		str := fmt.Sprintf("+ %x: This measurement has already been stored in the blockchain", dataStruct.Hash[:])
+
+		// Check if the stored measurement has a price. If not, set it.
+		if priceTag.Uint64() == 0 {
+			auth := bind.NewKeyedTransactor(ethClient.PrivateKey)
+			auth.Value = big.NewInt(0)
+			auth.GasLimit = uint64(3000000)
+			auth.GasPrice = big.NewInt(0)
+
+			price := (int64)(ethClient.GeneralConfig["priceMeasurements"].(float64))
+			_, err = ethClient.BalanceCon.SetPriceToMeasurement(auth, dataStruct.Hash, big.NewInt(price))
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+		}
+		return errors.New(str)
+	}
+
 	// Prepare authentication parameters
 	auth := bind.NewKeyedTransactor(ethClient.PrivateKey)
 	auth.Value = big.NewInt(0)
@@ -55,7 +93,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 	auth.GasPrice = big.NewInt(0)
 
 	// Send the transaction to the data smart contract
-	_, err := ethClient.DataCon.StoreInfo(auth, dataStruct.Hash, dataStruct.EncryptedURL, dataStruct.Description)
+	_, err = ethClient.DataCon.StoreInfo(auth, dataStruct.Hash, dataStruct.EncryptedURL, dataStruct.Description)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -194,7 +232,7 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	/* Introduce data in the Blockchain */
 	err = insertDataInBlockchain(ethClient, dataStruct)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return err
 	}
 
