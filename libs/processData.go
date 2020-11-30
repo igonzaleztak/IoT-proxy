@@ -2,54 +2,20 @@ package libs
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/big"
-	"net/http"
 	"time"
 
 	cipher "../cipherLibs"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
+	shell "github.com/ipfs/go-ipfs-api"
 )
-
-// Sends the measurement to the database
-func sendMeasurementToDB(msg []byte, urlDB string) (string, error) {
-	// Create a new HTTP client
-	client := http.Client{}
-
-	// Prepare the request
-	req, err := http.NewRequest("POST", urlDB, bytes.NewBuffer(msg))
-	if err != nil {
-		return "", err
-	}
-
-	// Send the request to the server
-	resp, err := client.Do(req)
-	if (err) != nil {
-		return "", errors.New("Something went wrong while sending the request to the server")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		str := fmt.Sprintf("%s\n", StreamToByte(resp.Body))
-		return "", errors.New(str)
-	}
-
-	// Get the url from the body
-	respBody := make(map[string]interface{})
-	err = json.NewDecoder(resp.Body).Decode(&respBody)
-	if err != nil {
-		return "", err
-	}
-
-	url := respBody["url"].(string)
-
-	return url, nil
-}
 
 // Inserts the required information to retrieve a measurement in the Blockchain
 func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain) error {
@@ -67,7 +33,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 	}
 
 	if measurement.Uri != "" {
-		str := fmt.Sprintf("+ %x: This measurement has already been stored in the blockchain", dataStruct.Hash[:])
+		str := fmt.Sprintf("%x: This measurement has already been stored in the blockchain", dataStruct.Hash[:])
 
 		// Check if the stored measurement has a price. If not, set it.
 		if priceTag.Uint64() == 0 {
@@ -95,7 +61,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 	// Send the transaction to the data smart contract
 	_, err = ethClient.DataCon.StoreInfo(auth, dataStruct.Hash, dataStruct.EncryptedURL, dataStruct.Description)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
@@ -107,7 +73,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 
 		dataBC, err := ethClient.DataCon.Ledger(nil, dataStruct.Hash)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return err
 		}
 
@@ -117,7 +83,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 
 		secondsPassed := time.Now().Sub(currentTime)
 		if secondsPassed > 15*time.Second {
-			fmt.Println("Could not check whether the data was introduced in the Blockchain")
+			log.Println("Could not check whether the data was introduced in the Blockchain")
 			return errors.New("Could not check whether the data was introduced in the Blockchain")
 		}
 	}
@@ -126,7 +92,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 	price := (int64)(ethClient.GeneralConfig["priceMeasurements"].(float64))
 	_, err = ethClient.BalanceCon.SetPriceToMeasurement(auth, dataStruct.Hash, big.NewInt(price))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
@@ -138,7 +104,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 
 		dataBC, err := ethClient.BalanceCon.GetPriceMeasurement(nil, dataStruct.Hash)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return err
 		}
 
@@ -148,7 +114,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 
 		secondsPassed := time.Now().Sub(currentTime)
 		if secondsPassed > 15*time.Second {
-			fmt.Println("Could not check whether the data was introduced in the Blockchain")
+			log.Println("Could not check whether the data was introduced in the Blockchain")
 			return errors.New("Could not check whether the data was introduced in the Blockchain")
 		}
 	}
@@ -158,9 +124,10 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 
 // ProcessMeasurement processes the measurement:
 // 	- Signs the measurement
-//	- Sends the measurement to the storage module
-//  - Stores the information needed to retrieve
-//		the measurement in the Blockchain
+//	- Encrypts the measurement with a random symmetric key
+//	- Stores the measurement in the IPFS node
+//  - Stores the IPFS URL in the Blockchain encrypted with
+//	  the public key of the administrator
 func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) error {
 	// Convert the body to JSON data []byte
 	jsonData, err := json.Marshal(body)
@@ -177,17 +144,28 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	// Append the signature to the measurement
 	msg := append(jsonData, signedBody...)
 
-	/* Send encrypted measurement to storage module */
-	fmt.Println("+ Sending Measurement to: " + ethClient.GeneralConfig["dbBroker"].(string) + "/store")
+	// Create random symmetric k ey
+	randomKey := make([]byte, 32)
+	rand.Read(randomKey)
 
-	url, err := sendMeasurementToDB(msg,
-		ethClient.GeneralConfig["dbBroker"].(string)+"/store")
+	// Encrypt the measurement (msg) with the symmetric key
+	encryptedMsg, err := cipher.SymmetricEncryption(randomKey, msg)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("+ Measurement Stored successfully in the Storage module")
-	fmt.Println("+ URL received: " + url)
+	/* Store the encrypted measurement in the IPFS node */
+	// Define the shell to comunicate with the IPFS node
+	sh := shell.NewShell(ethClient.GeneralConfig["IPFSAddr"].(string))
+	cid, err := sh.Add(bytes.NewReader(encryptedMsg))
+	if err != nil {
+		return err
+	}
+
+	// Append the cid to the symmetruc key to store them in the Blockchain (BC)
+	secretBC := append(randomKey, []byte(cid)...)
+
+	log.Printf("Measurement store on IPFS node with hash: %s\n", cid)
 
 	/* Prepare the data that is going to be stored in the Blockchain */
 	sensorID := body["id"].(string)
@@ -199,26 +177,26 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	// Get the public key of the marketplace from the Blockchain
 	adminPubKeyString, err := ethClient.AccessCon.AdminPublicKey(nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		log.Fatal(err)
 	}
 
 	// Convert the string public key to bytes
 	adminPubKeyBytes, err := hex.DecodeString(adminPubKeyString)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		log.Fatal(err)
 	}
 
 	// Convert the public key to ecdsa.PublicKey
 	adminPubKey, err := crypto.UnmarshalPubkey(adminPubKeyBytes)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		log.Fatal(err)
 	}
 
 	// Encrypt the url with the public key of the marketplace
-	encryptedURL, err := cipher.EncryptWithPublicKey(*adminPubKey, []byte(url))
+	encryptedURL, err := cipher.EncryptWithPublicKey(*adminPubKey, secretBC)
 	if err != nil {
 		return err
 	}
@@ -232,11 +210,11 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	/* Introduce data in the Blockchain */
 	err = insertDataInBlockchain(ethClient, dataStruct)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
-	fmt.Println(fmt.Sprintf("+ Information stored in the Blockchain at the following hash: 0x%x\n\n", measurementHashBytes))
+	log.Printf("Information stored in the Blockchain at the following hash: 0x%x\n\n", measurementHashBytes)
 
 	return nil
 }

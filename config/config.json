@@ -9,5 +9,6 @@
   "HTTPport": "5053",
   "HTTPSport": "8053",
   "dbBroker" : "http://10.10.46.21:5051",
-  "priceMeasurements": 2
+  "priceMeasurements": 2,
+  "IPFSAddr": "localhost:5001"
 }

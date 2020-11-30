@@ -9,10 +9,12 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gorilla/mux"
 
 	accessControlContract "./contracts/accessContract"
 	balanceContract "./contracts/balanceContract"
@@ -128,92 +130,88 @@ func initialize() localClient {
 
 // EventListener listens to new events on /notify and parse them
 func (localClient localClient) EventListener(w http.ResponseWriter, req *http.Request) {
-	// Check whether the URL is correct or not
-	if req.URL.Path != "/notify" {
-		http.Error(w, "404 not found", http.StatusNotFound)
+
+	// Create a map with body of the message
+	//var bodyArray bodyArray
+	bodyMap := make(map[string]interface{})
+
+	// Create a map with the header of the message
+	header := req.Header
+	_ = header
+
+	// Read the body of the message
+	err := json.NewDecoder(req.Body).Decode(&bodyMap)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// Check if the method of the request is correct
-	switch req.Method {
-	case "POST":
-		// Create a map with body of the message
-		//var bodyArray bodyArray
-		bodyMap := make(map[string]interface{})
+	log.Printf("+ Measurement received: \n")
+	log.Println(bodyMap)
 
-		// Create a map with the header of the message
-		header := req.Header
-		_ = header
-
-		// Read the body of the message
-		err := json.NewDecoder(req.Body).Decode(&bodyMap)
-		if err != nil {
-			fmt.Println(err)
-			http.Error(w, "401 Could not introduce the event in the blockchain because of: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		fmt.Printf("+ Measurement received: \n")
-		fmt.Println(bodyMap)
-
-		// Convert the localClient to libs.ComponentConfig
-		ethClient := libs.ComponentConfig{
-			localClient.EthereumClient,
-			localClient.PrivateKey,
-			localClient.PublicKey,
-			localClient.Address,
-			localClient.DataCon,
-			localClient.AccessCon,
-			localClient.BalanceCon,
-			localClient.GeneralConfig,
-		}
-
-		// Check whether the IoT producer has access to the platform
-		err = libs.CheckAccess(ethClient)
-		if err != nil {
-			fmt.Println(err)
-			http.Error(w, "401 Could not introduce the event in the blockchain because of: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		fmt.Printf("\n+ The producer has access to the Blockchain\n\n")
-		fmt.Printf("+ Processing Measurement\n")
-		err = libs.ProcessMeasurement(ethClient, bodyMap)
-		if err != nil {
-			fmt.Println(err)
-			http.Error(w, "401 Could not introduce the event in the blockchain because of: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// Orion sends the events inside a JSON array of objects.
-		// This loop iterates over the JSON array and processes
-		// the events individually.
-		/*
-			for _, body := range bodyArray.Data {
-				fmt.Println(body)
-			}
-		*/
-	default:
-		http.Error(w, "401 Only POST methods are supported", http.StatusBadRequest)
-		fmt.Fprintf(w, "Only Post methods are supported")
+	// Convert the localClient to libs.ComponentConfig
+	ethClient := libs.ComponentConfig{
+		localClient.EthereumClient,
+		localClient.PrivateKey,
+		localClient.PublicKey,
+		localClient.Address,
+		localClient.DataCon,
+		localClient.AccessCon,
+		localClient.BalanceCon,
+		localClient.GeneralConfig,
 	}
+
+	// Check whether the IoT producer has access to the platform
+	err = libs.CheckAccess(ethClient)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	log.Printf("The producer has access to the Blockchain\n\n")
+	log.Printf("Processing Measurement\n")
+	err = libs.ProcessMeasurement(ethClient, bodyMap)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Orion sends the events inside a JSON array of objects.
+	// This loop iterates over the JSON array and processes
+	// the events individually.
+	/*
+		for _, body := range bodyArray.Data {
+			fmt.Println(body)
+		}
+	*/
 }
 
 // main function
 func main() {
 
-	fmt.Printf("----------- Initializing IoT Proxy -----------\n\n")
+	log.Printf("----------- Initializing IoT Proxy -----------\n\n")
 	myLocalClient := initialize()
 
-	fmt.Printf("Listening to measurements on port %s\n\n", myLocalClient.GeneralConfig["HTTPport"].(string))
+	log.Printf("Listening to measurements on port %s\n\n", myLocalClient.GeneralConfig["HTTPport"].(string))
 
-	// Starting routing
-	http.HandleFunc("/notify", myLocalClient.EventListener)
+	// Init the route handler
+	r := mux.NewRouter()
 
-	// HTTP interface in a new subroutine
-	err := http.ListenAndServe(":"+myLocalClient.GeneralConfig["HTTPport"].(string), nil)
-	if err != nil {
-		log.Fatal("ListenAndServe ", err)
+	// Route to process the measurements of the IoT producers
+	r.HandleFunc("/notify", myLocalClient.EventListener).Methods("POST")
+
+	// Configure http server
+	srv := &http.Server{
+		Handler:      r,
+		Addr:         ":" + myLocalClient.GeneralConfig["HTTPport"].(string),
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
+	// Start server
+	log.Fatal(srv.ListenAndServe())
 }
