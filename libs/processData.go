@@ -11,10 +11,11 @@ import (
 	"math/big"
 	"time"
 
-	cipher "../cipherLibs"
+	cipher "administrator/ipfs-node/libs/cipher"
+	ipfsLib "administrator/ipfs-node/libs/ipfsLib"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
-	shell "github.com/ipfs/go-ipfs-api"
 )
 
 // Inserts the required information to retrieve a measurement in the Blockchain
@@ -148,24 +149,20 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	randomKey := make([]byte, 32)
 	rand.Read(randomKey)
 
+	log.Printf("%x\n", randomKey)
+
 	// Encrypt the measurement (msg) with the symmetric key
 	encryptedMsg, err := cipher.SymmetricEncryption(randomKey, msg)
 	if err != nil {
 		return err
 	}
 
-	/* Store the encrypted measurement in the IPFS node */
-	// Define the shell to comunicate with the IPFS node
-	sh := shell.NewShell(ethClient.GeneralConfig["IPFSAddr"].(string))
-	cid, err := sh.Add(bytes.NewReader(encryptedMsg))
-	if err != nil {
-		return err
-	}
+	/* Store the encrypted measurement in the IPFS network */
+	// Convert bytes to files.node
+	cid, err := ipfsLib.AddToIPFS(ethClient.IPFSConfig.IpfsCore, bytes.NewReader(encryptedMsg))
 
-	// Append the cid to the symmetruc key to store them in the Blockchain (BC)
+	// Append the cid to the symmetric key to store them in the Blockchain (BC)
 	secretBC := append(randomKey, []byte(cid)...)
-
-	log.Printf("Measurement store on IPFS node with hash: %s\n", cid)
 
 	/* Prepare the data that is going to be stored in the Blockchain */
 	sensorID := body["id"].(string)
@@ -177,22 +174,19 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	// Get the public key of the marketplace from the Blockchain
 	adminPubKeyString, err := ethClient.AccessCon.AdminPublicKey(nil)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		return err
 	}
 
 	// Convert the string public key to bytes
 	adminPubKeyBytes, err := hex.DecodeString(adminPubKeyString)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		return err
 	}
 
 	// Convert the public key to ecdsa.PublicKey
 	adminPubKey, err := crypto.UnmarshalPubkey(adminPubKeyBytes)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		return err
 	}
 
 	// Encrypt the url with the public key of the marketplace
@@ -210,7 +204,6 @@ func ProcessMeasurement(ethClient ComponentConfig, body map[string]interface{}) 
 	/* Introduce data in the Blockchain */
 	err = insertDataInBlockchain(ethClient, dataStruct)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 

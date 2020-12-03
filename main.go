@@ -1,65 +1,93 @@
 package main
 
 import (
+	"context"
 	"crypto/elliptic"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
-	"os"
 	"time"
+
+	accessControlContract "administrator/ipfs-node/contracts/accessContract"
+	balanceContract "administrator/ipfs-node/contracts/balanceContract"
+	dataContract "administrator/ipfs-node/contracts/dataContract"
+	libs "administrator/ipfs-node/libs"
+	ipfsLib "administrator/ipfs-node/libs/ipfsLib"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	transport "github.com/libp2p/go-libp2p-core/transport"
+	swarm "github.com/libp2p/go-libp2p-swarm"
+
 	"github.com/gorilla/mux"
-
-	accessControlContract "./contracts/accessContract"
-	balanceContract "./contracts/balanceContract"
-	dataContract "./contracts/dataContract"
-
-	libs "./libs"
+	"github.com/mitchellh/mapstructure"
 )
 
-// bodyArray struct used to decode a JSON array of objects
-type bodyArray struct {
-	Data [](map[string]interface{})
-}
-
-// Local definition of the struct libs.ComponentConfig
 type localClient libs.ComponentConfig
 
-func readConfigFile() map[string]interface{} {
-	config := make(map[string]interface{})
+// EventListener listens to new events on /notify and processes them
+func (myLocalClient localClient) EventListener(w http.ResponseWriter, req *http.Request) {
+	// Create a map with body of the message
+	//var bodyArray bodyArray
+	bodyMap := make(map[string]interface{})
 
-	// Open the configuration file
-	jsonFile, err := os.Open("./config/config.json")
+	// Read the body of the message
+	err := json.NewDecoder(req.Body).Decode(&bodyMap)
 	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-	defer jsonFile.Close()
-
-	// Parse to bytes
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
-	// Load the object in the map[string]interface{} variable
-	err = json.Unmarshal(byteValue, &config)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	return config
+	log.Printf("+ Measurement received: \n")
+	log.Println(bodyMap)
 
+	// Convert the localClient to libs.ComponentConfig
+	ethClient := libs.ComponentConfig{
+		myLocalClient.EthereumClient,
+		myLocalClient.PrivateKey,
+		myLocalClient.PublicKey,
+		myLocalClient.Address,
+		myLocalClient.DataCon,
+		myLocalClient.AccessCon,
+		myLocalClient.BalanceCon,
+		myLocalClient.IPFSConfig,
+		myLocalClient.GeneralConfig,
+	}
+
+	// Check whether the IoT producer has access to the platform
+	err = libs.CheckAccess(ethClient)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	log.Printf("The producer has access to the Blockchain\n\n")
+	log.Printf("Processing Measurement\n")
+	err = libs.ProcessMeasurement(ethClient, bodyMap)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
-// Initialize the element
+// Gets configuration parameters
 func initialize() localClient {
-	// Read the configuration file
-	config := readConfigFile()
+	// Read IPFS configuration file
+	config := libs.ReadConfigFile("config.json")
+
+	// Patch to fix swarm error (https://github.com/ipfs/go-ipfs/issues/6468)
+	swarm.DialTimeoutLocal = transport.DialTimeout
+
+	/** Initialize Blockchain link and smart contracts **/
 
 	// Connect to the IPC endpoint of the Ethereum node
 	client, err := ethclient.Dial(config["nodePath"].(string) + "geth.ipc")
@@ -68,7 +96,7 @@ func initialize() localClient {
 		panic(err)
 	}
 
-	// Get the private key of the admin
+	// Get the private key of the ethereum account
 	privKey, err := libs.GetPrivateKey(config["addr"].(string),
 		config["password"].(string),
 		config["nodePath"].(string)+"keystore/")
@@ -113,8 +141,13 @@ func initialize() localClient {
 		panic(err)
 	}
 
-	// Store the values in the struct
-	ethereumClient := localClient{
+	// Convert the []interface{}  laod on the config file to
+	// an array of strings
+	var auxConfig libs.ConfigIPFS
+	mapstructure.Decode(config, &auxConfig)
+
+	// Load config in the ComponentConfig
+	myLocalClient := localClient{
 		client,
 		privKey,
 		publicKeyECDSA,
@@ -122,85 +155,45 @@ func initialize() localClient {
 		dataContract,
 		accessContract,
 		balanceContract,
+		auxConfig,
 		config,
 	}
 
-	return ethereumClient
+	/** Start IPFS node **/
+	log.Println("-- Getting an IPFS node running -- ")
+	_, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Spawn ipfs node with default configuration
+	log.Println("Spawning node on a temporary repo")
+	ipfs, err := ipfsLib.SpawnEphemeral(context.Background(), myLocalClient.IPFSConfig.IpfsPath)
+	if err != nil {
+		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+	}
+	log.Println("IPFS node is running")
+
+	// Load ipfs interface in the config struct
+	myLocalClient.IPFSConfig.IpfsCore = ipfs
+
+	// Connecting to peers
+	bootstrapNodes := myLocalClient.IPFSConfig.IpfsBoostrap
+	go ipfsLib.ConnectToPeers(context.Background(), ipfs, bootstrapNodes)
+
+	return myLocalClient
 }
 
-// EventListener listens to new events on /notify and parse them
-func (localClient localClient) EventListener(w http.ResponseWriter, req *http.Request) {
-
-	// Create a map with body of the message
-	//var bodyArray bodyArray
-	bodyMap := make(map[string]interface{})
-
-	// Create a map with the header of the message
-	header := req.Header
-	_ = header
-
-	// Read the body of the message
-	err := json.NewDecoder(req.Body).Decode(&bodyMap)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("+ Measurement received: \n")
-	log.Println(bodyMap)
-
-	// Convert the localClient to libs.ComponentConfig
-	ethClient := libs.ComponentConfig{
-		localClient.EthereumClient,
-		localClient.PrivateKey,
-		localClient.PublicKey,
-		localClient.Address,
-		localClient.DataCon,
-		localClient.AccessCon,
-		localClient.BalanceCon,
-		localClient.GeneralConfig,
-	}
-
-	// Check whether the IoT producer has access to the platform
-	err = libs.CheckAccess(ethClient)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	log.Printf("The producer has access to the Blockchain\n\n")
-	log.Printf("Processing Measurement\n")
-	err = libs.ProcessMeasurement(ethClient, bodyMap)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Orion sends the events inside a JSON array of objects.
-	// This loop iterates over the JSON array and processes
-	// the events individually.
-	/*
-		for _, body := range bodyArray.Data {
-			fmt.Println(body)
-		}
-	*/
-}
-
-// main function
+// Main function
 func main() {
 
-	log.Printf("----------- Initializing IoT Proxy -----------\n\n")
+	// Initialize node configuration
 	myLocalClient := initialize()
 
+	// Start HTTP server to listen to the iot proxy's measurements
+	log.Printf("-- Initializing IoT proxy --")
 	log.Printf("Listening to measurements on port %s\n\n", myLocalClient.GeneralConfig["HTTPport"].(string))
 
 	// Init the route handler
 	r := mux.NewRouter()
-
 	// Route to process the measurements of the IoT producers
 	r.HandleFunc("/notify", myLocalClient.EventListener).Methods("POST")
 
@@ -214,4 +207,5 @@ func main() {
 
 	// Start server
 	log.Fatal(srv.ListenAndServe())
+
 }

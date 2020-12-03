@@ -1,4 +1,6 @@
 {
+  "ipfsPath": "/home/administrator/.ipfs2",
+  "ipfsBoostrap": ["/ip4/10.10.46.21/tcp/4001/ipfs/12D3KooWNjiRv9Uf4fcx58YhMyThMoxga9gxhMwMKU9M84eAANuz"],
   "nodePath": "/home/administrator/demoPOA2/iot-node/",
   "addr": "0x47a267d59baDb1577CEe26c7A42E4E19aFC85cBA",
   "password": "1",

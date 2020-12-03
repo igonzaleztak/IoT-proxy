@@ -1,20 +1,35 @@
 package libs
 
 import (
+	accessControlContract "administrator/ipfs-node/contracts/accessContract"
+	balanceContract "administrator/ipfs-node/contracts/balanceContract"
+	dataContract "administrator/ipfs-node/contracts/dataContract"
 	"bytes"
-	"crypto/ecdsa"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+
+	"crypto/ecdsa"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-
-	accessControlContract "../contracts/accessContract"
-	balanceContract "../contracts/balanceContract"
-	dataContract "../contracts/dataContract"
+	icore "github.com/ipfs/interface-go-ipfs-core"
+	// This package is needed so that all the preloaded plugins are loaded automatically
 )
 
-// ComponentConfig is a struct that stores the parameters of the node
+// ConfigIPFS is a struct used to unmarshal the
+// config JSON to a go Object
+type ConfigIPFS struct {
+	IpfsPath     string
+	IpfsBoostrap []string
+	IpfsCore     icore.CoreAPI
+}
+
+// ComponentConfig stores the configuration of
+// this component
 type ComponentConfig struct {
 	EthereumClient *ethclient.Client
 	PrivateKey     *ecdsa.PrivateKey
@@ -23,6 +38,7 @@ type ComponentConfig struct {
 	DataCon        *dataContract.DataLedgerContract
 	AccessCon      *accessControlContract.AccessControlContract
 	BalanceCon     *balanceContract.BalanceContract
+	IPFSConfig     ConfigIPFS
 	GeneralConfig  map[string]interface{}
 }
 
@@ -61,4 +77,29 @@ func StreamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
 	return buf.Bytes()
+}
+
+// ReadConfigFile Reads configuration file
+func ReadConfigFile(name string) map[string]interface{} {
+	config := make(map[string]interface{})
+
+	// Open the configuration file
+	jsonFile, err := os.Open("./config/" + name)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	defer jsonFile.Close()
+
+	// Parse to bytes
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	// Load the object in the map[string]interface{} variable
+	err = json.Unmarshal(byteValue, &config)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	return config
 }
