@@ -34,7 +34,7 @@ func insertDataInBlockchain(ethClient ComponentConfig, dataStruct DataBlockchain
 	}
 
 	if measurement.Uri != "" {
-		str := fmt.Sprintf("%x: This measurement has already been stored in the blockchain", dataStruct.Hash[:])
+		str := fmt.Sprintf("%x: The measurement had already been stored in the blockchain", dataStruct.Hash[:])
 
 		// Check if the stored measurement has a price. If not, set it.
 		if priceTag.Uint64() == 0 {
