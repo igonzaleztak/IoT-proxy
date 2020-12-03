@@ -10,6 +10,5 @@
   "dataContractAddr": "0x584430546B9D14135Cce4438190840a240d12E93",
   "HTTPport": "5053",
   "HTTPSport": "8053",
-  "priceMeasurements": 2,
-  "IPFSAddr": "localhost:5001"
+  "priceMeasurements": 2
 }
