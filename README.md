@@ -6,7 +6,7 @@ This component is composed of two modules: an IoT API and an IPFS module. The fi
 <li>The IPFS URL of the measurements encrypted with the public key of the administrator of the marketplace</li>
 <li>The symmetric key, which was used to encrypt the measurement, encrypted with the public key of the administrator of the marketplace </li>
 <p></p>
-On the other hand, the IPFS module is a normal IPFS node with an extra authentication module. It checks whether the IoT supplier can or cannot store its measurements in the IPFS network. To do so, This component queries the ProducersNameMap mapping of the <a href="https://github.com/igonzaleztak/marketplace/blob/ipfs-alternative/storage/contracts/accessContract/accessContract.sol">access control smart contract</a>. Only IoT suppliers that have been previously authorized by the administrator of the platform can store measurements in the system. Thus, assuring that only reliable IoT providers can participate in the platform.
+On the other hand, the IPFS module is a normal IPFS node with an extra authentication module. It checks whether the IoT supplier can or cannot store its measurements in the IPFS network. To do so, this component queries the ProducersNameMap mapping of the <a href="https://github.com/igonzaleztak/marketplace/blob/ipfs-alternative/storage/contracts/accessContract/accessContract.sol">access control smart contract</a>. Only IoT suppliers that have been previously authorized by the administrator of the platform can store measurements in the system. Thus, assuring that only reliable IoT providers can participate in the platform.
 <p></p>
 The following image shows the workflow chart of this component. This figure shows the diferent modules that are used in the IoT gateway part. In it, we can see that the aforementioned modules are connected to a Blockchain node, which is used to connect the IoT suppliers to the Blockchain.
 <p></p>
@@ -21,3 +21,5 @@ The following figure shows the steps that IoT producers must follow to store the
   <img src="docs\images\auth-scheme.png" height="450px" width="800px" alt="Image">
   <p align="center" id="gen-arch">Gateway architecure</p>
 </p>
+<p></p>
+For a more detailed information of the architecture of the marketplace check out the following <a href="https://github.com/igonzaleztak/marketplace">link</a>.
