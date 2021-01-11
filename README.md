@@ -19,7 +19,7 @@ The following figure shows the steps that IoT producers must follow to store the
 <p></p>
 <p align="center">
   <img src="docs\images\auth-scheme.png" height="450px" width="800px" alt="Image">
-  <p align="center" id="gen-arch">Gateway architecure</p>
+  <p align="center" id="communication-scheme">Storage process</p>
 </p>
 <p></p>
 For a more detailed information of the architecture of the marketplace check out the following <a href="https://github.com/igonzaleztak/marketplace">link</a>.
